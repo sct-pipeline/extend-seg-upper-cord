@@ -3,6 +3,8 @@
 import nibabel as nib
 import numpy as np
 import argparse
+from nibabel.orientations import aff2axcodes, axcodes2ornt, ornt_transform
+
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -12,6 +14,27 @@ def get_parser():
     parser.add_argument("-margin", type=int, default=5, help="Nombre de slices au-dessus du label à vérifier")
     return parser
 
+def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
+    """
+    Vérifie et réoriente une image NIfTI selon l'orientation désirée.
+    :param img: Image NIfTI chargée avec nibabel
+    :param desired_orientation: Tuple définissant l'orientation cible (ex: ('R', 'A', 'S'))
+    :return: Image potentiellement réorientée
+    """
+    current_orientation = aff2axcodes(img.affine)  # Obtenir l'orientation actuelle
+    if current_orientation != desired_orientation:
+        print(f"Réorientation nécessaire : {current_orientation} -> {desired_orientation}")
+        
+        # Calculer la transformation d'orientation
+        ornt_transform_matrix = ornt_transform(axcodes2ornt(current_orientation), axcodes2ornt(desired_orientation))
+        
+        # Appliquer la transformation
+        reoriented_img = img.as_reoriented(ornt_transform_matrix)
+        return reoriented_img
+    else:
+        print("L'image est déjà correctement orientée.")
+        return img
+
 def main():
     parser = get_parser()
     args = parser.parse_args()
@@ -19,6 +42,10 @@ def main():
     # Charger les images NIfTI
     seg_img = nib.load(args.segmentation)
     label_img = nib.load(args.labels)
+
+    # Vérifier et corriger l'orientation de l'image si nécessaire
+    seg_img = check_and_reorient(seg_img)
+    label_img = check_and_reorient(label_img)
 
     # Convertir en tableaux numpy
     seg_data = seg_img.get_fdata()
