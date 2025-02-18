@@ -14,7 +14,7 @@ def get_parser():
     parser.add_argument("-margin", type=int, default=5, help="Nombre de slices au-dessus du label à vérifier")
     return parser
 
-def check_and_reorient(img, nom_image, desired_orientation=('R', 'A', 'S')):
+def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
     """
     Vérifie et réoriente une image NIfTI selon l'orientation désirée.
     :param img: Image NIfTI chargée avec nibabel
@@ -23,8 +23,6 @@ def check_and_reorient(img, nom_image, desired_orientation=('R', 'A', 'S')):
     """
     current_orientation = aff2axcodes(img.affine)  # Obtenir l'orientation actuelle
     if current_orientation != desired_orientation:
-        print(f"Réorientation de {nom_image} nécessaire : {current_orientation} -> {desired_orientation}")
-        
         # Calculer la transformation d'orientation
         ornt_transform_matrix = ornt_transform(axcodes2ornt(current_orientation), axcodes2ornt(desired_orientation))
         
@@ -32,7 +30,6 @@ def check_and_reorient(img, nom_image, desired_orientation=('R', 'A', 'S')):
         reoriented_img = img.as_reoriented(ornt_transform_matrix)
         return reoriented_img
     else:
-        print(f"L'image {nom_image} est déjà correctement orientée.")
         return img
 
 def main():
@@ -44,8 +41,8 @@ def main():
     label_img = nib.load(args.labels)
 
     # Vérifier et corriger l'orientation de l'image si nécessaire
-    seg_img = check_and_reorient(seg_img, args.segmentation)
-    label_img = check_and_reorient(label_img, args.labels)
+    seg_img = check_and_reorient(seg_img)
+    label_img = check_and_reorient(label_img)
 
     # Convertir en tableaux numpy
     seg_data = seg_img.get_fdata()
@@ -73,9 +70,9 @@ def main():
 
     # Vérifier si la segmentation atteint cette coordonnée Z
     seg_above_label = seg_data[:, :, z_upper_limit] > 0  # Pixels segmentés à ce niveau Z
-    
+
     if np.any(seg_above_label):
-        print(f"La segmentation atteint {args.margin} slices au dessus du premier label (Z={z_upper_limit}).")
+        print(f"La segmentation atteint au moins {args.margin} slices au dessus du premier label (Z={z_upper_limit}).")
         return True
     else:
         print(f"La segmentation n'atteint pas {args.margin} slices au dessus du premier label (Z={z_upper_limit}).")
