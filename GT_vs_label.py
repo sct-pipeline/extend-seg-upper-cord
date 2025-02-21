@@ -1,4 +1,5 @@
-# Ce script vise à vérifier si la segmentation dépasse légèrement label de la vertèbre C1
+# Ce script vise à créer un document CSV qui présente l'écart entre le label de C1 et le haut de la segmentation donnée (négatif si la segmentation arrive en dessous du label).
+# Le script analyse plusieurs fichiers selon un pattern regex.
 
 import os
 import glob
