@@ -1,18 +1,38 @@
 # Ce script vise à vérifier si la segmentation dépasse légèrement label de la vertèbre C1
 
+import os
+import glob
+import re
+import pandas as pd
 import nibabel as nib
 import numpy as np
 import argparse
 from nibabel.orientations import aff2axcodes, axcodes2ornt, ornt_transform
 
+CSV_FILE = "comparaison_seg_vs_label.csv"
+
 
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Vérifie si la segmentation dépasse légèrement le premier label des vertèbres.")
-    parser.add_argument("-segmentation", type=str, help="Chemin du fichier NIfTI de segmentation (.nii.gz)")
-    parser.add_argument("-labels", type=str, help="Chemin du fichier NIfTI des labels des vertèbres (.nii.gz)")
-    parser.add_argument("-margin", type=int, default=5, help="Nombre de slices au-dessus du label à vérifier")
+    parser.add_argument("-segmentation_regex", type=str, help="Expression régulière pour les fichiers de segmentation (.nii.gz)")
+    parser.add_argument("-labels_regex", type=str, help="Expression régulière pour les fichiers de labels (.nii.gz)")
+    parser.add_argument("-d_seg", type=str, help="Dossier contenant les fichiers de segmentation à analyser")
+    parser.add_argument("-d_label", type=str, help="Dossier contenant les fichiers de labels à analyser")
+    parser.add_argument("-seg_method", type=str, help="Nom de la méthode de segmentation utilisée")
     return parser
+
+
+
+def find_files(directory, regex_pattern):
+    """
+    Trouve les fichiers correspondant à une expression régulière dans un dossier.
+    """
+    all_files = glob.glob(os.path.join(directory, "*", "anat", "*.nii.gz"), recursive=True)
+    matched_files = [f for f in all_files if re.search(regex_pattern, f)]
+    return matched_files
+
+
 
 def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
     """
@@ -32,13 +52,19 @@ def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
     else:
         return img
 
-def main():
-    parser = get_parser()
-    args = parser.parse_args()
+
+
+def trouver_nom_sujet(file_path):
+    match = re.search(r"(sub-[a-zA-Z0-9]+)", file_path)
+    return match.group(1) if match else "Unknown"
+
+
+
+def process_segmentation(seg_file, label_file, methode):
     
     # Charger les images NIfTI
-    seg_img = nib.load(args.segmentation)
-    label_img = nib.load(args.labels)
+    seg_img = nib.load(seg_file)
+    label_img = nib.load(label_file)
 
     # Vérifier et corriger l'orientation de l'image si nécessaire
     seg_img = check_and_reorient(seg_img)
@@ -52,31 +78,92 @@ def main():
     label_indices = np.where(label_data != 0)[2]
     
     if label_indices.size == 0:
-        print("Aucun label trouvé dans l'image des labels.")
-        return False
+        return {
+            "Sujet": trouver_nom_sujet(seg_file),       # trouver quoi mettre
+            "Écart": "N/A",
+        }
 
     # Trouver la coordonnée Z maximale où il y a un label
     max_z_label = np.max(label_indices)
     
-    # Définir là où on veut vérifier si la segmentation se rend
-    z_upper_limit = max_z_label + args.margin  # Définir la limite supérieure
-    z_upper_limit = min(z_upper_limit, seg_data.shape[2] - 1)  # S'assurer qu'on ne dépasse pas les dimensions
-
     # Vérifier les limites de la segmentation
     seg_indices = np.where(seg_data > 0)[2]
-    min_z_seg = np.min(seg_indices)  # Premier niveau Z où la segmentation est présente
     max_z_seg = np.max(seg_indices)
-    print(f"La segmentation commence à Z={min_z_seg} et se termine à Z={max_z_seg}.")
 
-    # Vérifier si la segmentation atteint cette coordonnée Z
-    seg_above_label = seg_data[:, :, z_upper_limit] > 0  # Pixels segmentés à ce niveau Z
+    # Calculer l'écart entre le label le plus haut et la limite supérieure de la segmentation
+    ecart = max_z_seg - max_z_label
 
-    if np.any(seg_above_label):
-        print(f"La segmentation atteint au moins {args.margin} slices au dessus du premier label (Z={z_upper_limit}).")
-        return True
+    return {
+        "Sujet": trouver_nom_sujet(seg_file),
+        methode: ecart
+    }
+
+
+
+def load_existing_results():
+    """Charge le fichier CSV existant et retourne un DataFrame."""
+    if os.path.exists(CSV_FILE):
+        return pd.read_csv(CSV_FILE)
+    return pd.DataFrame()
+
+
+
+def save_results(new_results, methode):
+    """Ajoute les nouveaux résultats au fichier CSV sans dupliquer des méthodes existantes pour un même sujet."""
+    df_existing = load_existing_results()
+
+    if not df_existing.empty and methode in df_existing.columns:
+        print(f"Les résultats pour la méthode '{methode}' existent déjà. Aucun ajout effectué.")
+        return
+
+    # Filtrer les nouvelles données pour éviter d'ajouter une méthode déjà présente pour un même sujet
+    new_df = pd.DataFrame(new_results)
+
+    if df_existing.empty:
+        # Si le fichier CSV est vide, on initialise avec Sujet + nouvelle colonne
+        final_df = new_df
+    
     else:
-        print(f"La segmentation n'atteint pas {args.margin} slices au dessus du premier label (Z={z_upper_limit}).")
-        return False
+        # Vérifier que "Sujet" existe dans df_existing
+        if "Sujet" not in df_existing.columns:
+            print("Erreur : Le fichier CSV existant ne contient pas la colonne 'Sujet'. Vérifiez le format du fichier.")
+            return
+        
+        # Fusionner les nouvelles données avec les anciennes sur la colonne "Sujet"
+        final_df = df_existing.merge(new_df, on="Sujet", how="outer")
+
+    # Sauvegarder le fichier CSV mis à jour
+    final_df.to_csv(CSV_FILE, index=False)
+    print(f"Résultats ajoutés sous la colonne '{methode}' et sauvegardés dans '{CSV_FILE}'.")
+
+
+
+def main():
+    parser = get_parser()
+    args = parser.parse_args()
+
+    # Trouver les fichiers correspondant aux regex
+    seg_files = find_files(args.d_seg, args.segmentation_regex)
+    label_files = find_files(args.d_label, args.labels_regex)
+
+    seg_dict = {trouver_nom_sujet(f): f for f in seg_files if trouver_nom_sujet(f)}
+    label_dict = {trouver_nom_sujet(f): f for f in label_files if trouver_nom_sujet(f)}
+    sujets_communs = set(seg_dict.keys()) & set(label_dict.keys())
+    paired_files = sorted([(seg_dict[sub], label_dict[sub]) for sub in sujets_communs], key=lambda x: trouver_nom_sujet(x[0]))
+
+    if not seg_files or not label_files:
+        print("Aucun fichier correspondant trouvé.")
+        return
+    
+    results = []
+    for seg_file, label_file in paired_files:
+        print(f"Traitement : {seg_file} et {label_file}")
+        result = process_segmentation(seg_file, label_file, args.seg_method)
+        results.append(result)
+
+    save_results(results, args.seg_method)
+
+
 
 if __name__ == '__main__':
     main()
