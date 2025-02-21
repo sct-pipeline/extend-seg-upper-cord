@@ -1,3 +1,5 @@
+# Ce script permet de lancer la segmentation propseg sur tous les sujets de la base de données.
+
 import os
 import glob
 import re
