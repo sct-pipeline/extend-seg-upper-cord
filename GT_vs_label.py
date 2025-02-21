@@ -15,7 +15,7 @@ CSV_FILE = "comparaison_seg_vs_label.csv"
 
 def get_parser():
     parser = argparse.ArgumentParser(
-        description="Vérifie si la segmentation dépasse légèrement le premier label des vertèbres.")
+        description="Vérifie où se situe la segmentation par rapport au premier label des vertèbres.")
     parser.add_argument("-segmentation_regex", type=str, help="Expression régulière pour les fichiers de segmentation (.nii.gz)")
     parser.add_argument("-labels_regex", type=str, help="Expression régulière pour les fichiers de labels (.nii.gz)")
     parser.add_argument("-d_seg", type=str, help="Dossier contenant les fichiers de segmentation à analyser")
@@ -30,7 +30,7 @@ def find_files(directory, regex_pattern):
     Trouve les fichiers correspondant à une expression régulière dans un dossier.
     """
     all_files = glob.glob(os.path.join(directory, "*", "anat", "*.nii.gz"), recursive=True)
-    matched_files = [f for f in all_files if re.search(regex_pattern, f)]
+    matched_files = [f for f in all_files if re.search(regex_pattern, f) and "centerline" not in f]
     return matched_files
 
 
@@ -55,9 +55,12 @@ def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
 
 
 
-def trouver_nom_sujet(file_path):
-    match = re.search(r"(sub-[a-zA-Z0-9]+)", file_path)
-    return match.group(1) if match else "Unknown"
+def trouver_nom_sujet_contraste(file_path):
+    match_sujet = re.search(r"(sub-[a-zA-Z0-9]+)", file_path)
+    match_contraste = re.search(r"(T[1-2]w)", file_path)
+    if match_sujet and match_contraste:
+        return match_sujet.group(1) + match_contraste.group(1)
+    return "Unknown"
 
 
 
@@ -80,8 +83,8 @@ def process_segmentation(seg_file, label_file, methode):
     
     if label_indices.size == 0:
         return {
-            "Sujet": trouver_nom_sujet(seg_file),    
-            methode: "N/A",
+            "Sujet": trouver_nom_sujet_contraste(seg_file),
+            methode: "N/A"
         }
 
     # Trouver la coordonnée Z maximale où il y a un label
@@ -92,8 +95,8 @@ def process_segmentation(seg_file, label_file, methode):
     
     if seg_indices.size == 0:
         return {
-            "Sujet": trouver_nom_sujet(seg_file),
-            methode: "N/A",
+            "Sujet": trouver_nom_sujet_contraste(seg_file),
+            methode: "N/A"
         }
 
     max_z_seg = np.max(seg_indices)
@@ -102,10 +105,9 @@ def process_segmentation(seg_file, label_file, methode):
     ecart = max_z_seg - max_z_label
 
     return {
-        "Sujet": trouver_nom_sujet(seg_file),
+        "Sujet": trouver_nom_sujet_contraste(seg_file),
         methode: ecart
     }
-
 
 
 def load_existing_results():
@@ -153,11 +155,13 @@ def main():
     # Trouver les fichiers correspondant aux regex
     seg_files = find_files(args.d_seg, args.segmentation_regex)
     label_files = find_files(args.d_label, args.labels_regex)
+    print(f"Fichiers de segmentation trouvés : {len(seg_files)}")
+    print(f"Fichiers de labels trouvés : {len(label_files)}") # À enlever
 
-    seg_dict = {trouver_nom_sujet(f): f for f in seg_files if trouver_nom_sujet(f)}
-    label_dict = {trouver_nom_sujet(f): f for f in label_files if trouver_nom_sujet(f)}
+    seg_dict = {trouver_nom_sujet_contraste(f): f for f in seg_files if trouver_nom_sujet_contraste(f)}
+    label_dict = {trouver_nom_sujet_contraste(f): f for f in label_files if trouver_nom_sujet_contraste(f)}
     sujets_communs = set(seg_dict.keys()) & set(label_dict.keys())
-    paired_files = sorted([(seg_dict[sub], label_dict[sub]) for sub in sujets_communs], key=lambda x: trouver_nom_sujet(x[0]))
+    paired_files = sorted([(seg_dict[sub], label_dict[sub]) for sub in sujets_communs], key=lambda x: trouver_nom_sujet_contraste(x[0]))
 
     if not seg_files or not label_files:
         print("Aucun fichier correspondant trouvé.")
