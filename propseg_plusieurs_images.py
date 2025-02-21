@@ -29,12 +29,17 @@ def segment_images(image_list, contrast):
 
         sujet = trouver_nom_sujet(image_path)
 
+        if contrast == "t1":
+            nom_contraste = "T1w"
+        elif contrast == "t2":
+            nom_contraste = "T2w"
+
         # Exécute sct_propseg
         cmd = [
             "sct_propseg",
             "-i", image_path,
             "-c", contrast,  # Définition du contraste choisi
-            "-o", f"extend-seg-upper-cord/anat/{sujet}_{contrast}_propseg.nii.gz"
+            "-o", f"segmentation_propseg/anat/{sujet}_{nom_contraste}_propseg.nii.gz"
         ]
         
         try:
