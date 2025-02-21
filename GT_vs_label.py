@@ -79,8 +79,8 @@ def process_segmentation(seg_file, label_file, methode):
     
     if label_indices.size == 0:
         return {
-            "Sujet": trouver_nom_sujet(seg_file),       # trouver quoi mettre
-            "Écart": "N/A",
+            "Sujet": trouver_nom_sujet(seg_file),    
+            methode: "N/A",
         }
 
     # Trouver la coordonnée Z maximale où il y a un label
@@ -88,6 +88,13 @@ def process_segmentation(seg_file, label_file, methode):
     
     # Vérifier les limites de la segmentation
     seg_indices = np.where(seg_data > 0)[2]
+    
+    if seg_indices.size == 0:
+        return {
+            "Sujet": trouver_nom_sujet(seg_file),
+            methode: "N/A",
+        }
+
     max_z_seg = np.max(seg_indices)
 
     # Calculer l'écart entre le label le plus haut et la limite supérieure de la segmentation
