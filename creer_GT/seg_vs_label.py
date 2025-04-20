@@ -1,5 +1,83 @@
-# Ce script vise à créer un document CSV qui présente l'écart entre le label de C1 et le haut de la segmentation donnée (négatif si la segmentation arrive en dessous du label).
-# Le script analyse plusieurs fichiers selon un pattern regex.
+"""
+Script de comparaison entre la position du label C1 et l'extrémité supérieure
+d'une segmentation de la moelle épinière.
+
+OBJECTIF :
+---------
+Ce script analyse automatiquement des paires segmentation / labels vertébraux
+dans un dataset organisé par sujet, et calcule pour chaque sujet l'écart en
+coordonnée Z entre :
+- la position la plus haute atteinte par la segmentation donnée ;
+- la position du label le plus haut (C1) dans le fichier de labels.
+
+L’écart est exprimé en nombre de slices (négatif si la segmentation se rend moins
+haut que le label de C1).
+
+FONCTIONNEMENT :
+----------------
+1. Recherche des fichiers NIfTI de segmentation et de labels dans des dossiers
+   distincts selon deux regex définis par l’utilisateur.
+2. Appariement automatique des fichiers en fonction du nom sujet_contraste (ex: sub-amu01_T1w).
+3. Réorientation éventuelle des images/segmentations selon l'orientation (RAS).
+4. Calcul de l'écart entre le haut de la segmentation et le label le plus haut.
+5. Export des résultats dans un fichier CSV dont le nom peut être modifié par l'utilisateur,
+   avec une colonne par méthode de segmentation. Si le fichier existe déjà, le script vérifie si la
+   colonne existe déjà. Si c'est le cas, rien n'est modifié, un message s'affiche précisant que la 
+   colonne existe déjà. Si la colonne n'existe pas, elle est créée et a comme nom le nom de la méthode.
+
+UTILISATION :
+-------------
+Ce script peut être appelé en ligne de commande avec les arguments suivants :
+
+    python GT_vs_label.py \
+        -segmentation_regex "regex_des_segmentations" \
+        -labels_regex "regex_des_labels" \
+        -d_seg "chemin/vers/les/segmentations" \
+        -d_label "chemin/vers/les/labels" \
+        -seg_method "NomMethode"
+
+Exemple d'utilisation pour comparer la segmentation ground truth de contrast-agnostic avec les labels:
+
+    python GT_vs_label.py \
+        -segmentation_regex "desc-softseg_label-SC_seg" \
+        -labels_regex "label-discs_dlabel" \
+        -d_seg "data-multi-subject/derivatives/labels_softseg_bin" \
+        -d_label "data-multi-subject/derivatives/labels" \
+        -seg_method "GT_contrast-agnostic"
+
+Les sections qui peuvent être modifiées par l'utilisateur sont précisées dans le script.
+
+À partir du chemin spécifié pour les segmentations (-d_seg) ou pour les labels (-d_label), 
+le script recherche les fichiers .nii.gz correspondant au regex donné dans tous les sous-dossiers, 
+en supposant que ceux-ci sont organisés selon la structure suivante :
+
+d_seg/
+├── sub-XX1/
+│   └── anat/
+│       └── fichier_segmentation.nii.gz
+├── sub-XX2/
+│   └── anat/
+│       └── fichier_segmentation.nii.gz
+
+Les noms des dossiers intermédiaires (sub-XX) peuvent varier, mais chaque fichier doit se 
+trouver dans un dossier anat/ à l'intérieur de ces sous-dossiers.
+
+Ce script n'analyse que les fichiers provenant des contrastes T1w et T2w
+
+ARGUMENTS :
+-----------
+- `-segmentation_regex` : expression régulière pour identifier les fichiers de segmentation
+- `-labels_regex`       : expression régulière pour identifier les fichiers de labels
+- `-d_seg`              : chemin vers le dossier contenant les segmentations
+- `-d_label`            : chemin vers le dossier contenant les labels
+- `-seg_method`         : nom de la méthode de segmentation (ajouté comme nom de colonne dans le CSV)
+
+AUTEUR :
+--------
+Mélisende St-Amour-Bilodeau
+Date : Avril 2025
+
+"""
 
 import os
 import glob
@@ -10,8 +88,7 @@ import numpy as np
 import argparse
 from nibabel.orientations import aff2axcodes, axcodes2ornt, ornt_transform
 
-CSV_FILE = "GT_vs_label_1904.csv"
-
+CSV_FILE = "test_2004.csv" # Adapter dépendemment du nom du fichier csv de sortie désiré.
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -56,6 +133,9 @@ def check_and_reorient(img, desired_orientation=('R', 'A', 'S')):
 
 
 def trouver_nom_sujet_contraste(file_path):
+    """
+    Trouve le nom du sujet et le contraste (T1w ou T2w) à partir du nom du fichier.
+    """
     match_sujet = re.search(r"(sub-[a-zA-Z0-9]+)", file_path)
     match_contraste = re.search(r"(T[1-2]w)", file_path)
     if match_sujet and match_contraste:
@@ -65,7 +145,9 @@ def trouver_nom_sujet_contraste(file_path):
 
 
 def process_segmentation(seg_file, label_file, methode):
-    
+    """
+    Calcule l'écart entre la segmentation et le label.
+    """
     # Charger les images NIfTI
     seg_img = nib.load(seg_file)
     label_img = nib.load(label_file)
@@ -89,7 +171,7 @@ def process_segmentation(seg_file, label_file, methode):
     
     # Trouver la coordonnée Z maximale où il y a un label
     max_z_label = np.max(label_indices)
-    print(max_z_label)
+
     # Vérifier les limites de la segmentation
     seg_indices = np.where(seg_data > 0)[2]
     
@@ -100,7 +182,7 @@ def process_segmentation(seg_file, label_file, methode):
         }
     
     max_z_seg = np.max(seg_indices)
-    print(max_z_seg)
+
     # Calculer l'écart entre le label le plus haut et la limite supérieure de la segmentation
     ecart = max_z_seg - max_z_label
 
@@ -111,7 +193,9 @@ def process_segmentation(seg_file, label_file, methode):
 
 
 def load_existing_results():
-    """Charge le fichier CSV existant et retourne un DataFrame."""
+    """
+    Charge le fichier CSV existant et retourne un DataFrame.
+    """
     if os.path.exists(CSV_FILE):
         return pd.read_csv(CSV_FILE)
     return pd.DataFrame()
@@ -119,7 +203,9 @@ def load_existing_results():
 
 
 def save_results(new_results, methode):
-    """Ajoute les nouveaux résultats au fichier CSV sans dupliquer des méthodes existantes pour un même sujet."""
+    """
+    Ajoute les nouveaux résultats au fichier CSV sans dupliquer des méthodes existantes pour un même sujet.
+    """
     df_existing = load_existing_results()
 
     if not df_existing.empty and methode in df_existing.columns:
@@ -149,14 +235,15 @@ def save_results(new_results, methode):
 
 
 def main():
+    """
+    Applique toutes les fonctions sur les fichiers.
+    """
     parser = get_parser()
     args = parser.parse_args()
 
     # Trouver les fichiers correspondant aux regex
     seg_files = find_files(args.d_seg, args.segmentation_regex)
     label_files = find_files(args.d_label, args.labels_regex)
-    print(f"Fichiers de segmentation trouvés : {len(seg_files)}")
-    print(f"Fichiers de labels trouvés : {len(label_files)}") # À enlever
 
     seg_dict = {trouver_nom_sujet_contraste(f): f for f in seg_files if trouver_nom_sujet_contraste(f)}
     label_dict = {trouver_nom_sujet_contraste(f): f for f in label_files if trouver_nom_sujet_contraste(f)}
