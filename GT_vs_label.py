@@ -10,7 +10,7 @@ import numpy as np
 import argparse
 from nibabel.orientations import aff2axcodes, axcodes2ornt, ornt_transform
 
-CSV_FILE = "comparaison_seg_vs_label.csv"
+CSV_FILE = "GT_vs_label_1904.csv"
 
 
 def get_parser():
@@ -86,10 +86,10 @@ def process_segmentation(seg_file, label_file, methode):
             "Sujet": trouver_nom_sujet_contraste(seg_file),
             methode: "N/A"
         }
-
+    
     # Trouver la coordonnée Z maximale où il y a un label
     max_z_label = np.max(label_indices)
-    
+    print(max_z_label)
     # Vérifier les limites de la segmentation
     seg_indices = np.where(seg_data > 0)[2]
     
@@ -98,9 +98,9 @@ def process_segmentation(seg_file, label_file, methode):
             "Sujet": trouver_nom_sujet_contraste(seg_file),
             methode: "N/A"
         }
-
+    
     max_z_seg = np.max(seg_indices)
-
+    print(max_z_seg)
     # Calculer l'écart entre le label le plus haut et la limite supérieure de la segmentation
     ecart = max_z_seg - max_z_label
 
@@ -162,6 +162,9 @@ def main():
     label_dict = {trouver_nom_sujet_contraste(f): f for f in label_files if trouver_nom_sujet_contraste(f)}
     sujets_communs = set(seg_dict.keys()) & set(label_dict.keys())
     paired_files = sorted([(seg_dict[sub], label_dict[sub]) for sub in sujets_communs], key=lambda x: trouver_nom_sujet_contraste(x[0]))
+
+    print(f"Sujets communs trouvés : {len(sujets_communs)}")
+
 
     if not seg_files or not label_files:
         print("Aucun fichier correspondant trouvé.")
