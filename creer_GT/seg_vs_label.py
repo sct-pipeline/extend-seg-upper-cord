@@ -88,7 +88,7 @@ import numpy as np
 import argparse
 from nibabel.orientations import aff2axcodes, axcodes2ornt, ornt_transform
 
-CSV_FILE = "test_2004.csv" # Adapter dépendemment du nom du fichier csv de sortie désiré.
+CSV_FILE = "test_propseg_modifie_2004.csv" # Adapter dépendemment du nom du fichier csv de sortie désiré.
 
 def get_parser():
     parser = argparse.ArgumentParser(

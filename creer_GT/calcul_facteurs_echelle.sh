@@ -41,15 +41,15 @@
 ###############################################################################
 
 # Dossiers
-propseg_dir="correction/dossier_vide/anat" # À adapter dépendemment de l'emplacement des segmentations propseg
-output_csv="facteurs_echelle_1904.csv" # À adapter dépendemment du nom du fichier CSV de sortie voulu
+propseg_dir="test_2004/output_modif/anat" # À adapter dépendemment de l'emplacement des segmentations propseg
+output_csv="facteurs_echelle_2004.csv" # À adapter dépendemment du nom du fichier CSV de sortie voulu
 echo "Sujet,CSA_PropSeg,CSA_GT,Facteur_Echelle" > "$output_csv"
 
 # Pour chaque fichier PropSeg
-for propseg_path in "$propseg_dir"/sub-*.nii.gz; do
+for propseg_path in "$propseg_dir"/sub-*_propseg.nii.gz; do
     propseg_file=$(basename "$propseg_path")
     sujet=$(echo "$propseg_file" | cut -d'_' -f1)  # ex: sub-geneva01
-    contraste=$(echo "$propseg_file" | cut -d'_' -f3)  
+    contraste=$(echo "$propseg_file" | cut -d'_' -f2)  
 
     echo $sujet
     echo $contraste

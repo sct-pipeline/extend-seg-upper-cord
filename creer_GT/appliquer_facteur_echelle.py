@@ -56,9 +56,9 @@ from scipy.ndimage import zoom
 from scipy.ndimage import center_of_mass
 
 # === PARAMÈTRES ===
-csv_path = "facteurs_echelle_filtre_1904.csv" # À modifier selon le nom du fichier CSV contenant les facteurs d'échelle
-input_seg_dir = "correction/dossier_vide/anat"  # À modifier selon le chemin contenant les segmentations auxquelles appliquer le facteur d'échelle
-output_seg_dir = "correction_2004/propseg_echelle"  # À modifier selon là où on veut enregistrer les segmentations modifiées
+csv_path = "test_2004/facteurs_echelle_2004.csv" # À modifier selon le nom du fichier CSV contenant les facteurs d'échelle
+input_seg_dir = "test_2004/output_modif/anat"  # À modifier selon le chemin contenant les segmentations auxquelles appliquer le facteur d'échelle
+output_seg_dir = "test_2004/propseg_echelle_2004"  # À modifier selon là où on veut enregistrer les segmentations modifiées
 os.makedirs(output_seg_dir, exist_ok=True)
 
 def scale_segmentation_per_slice(input_path, output_path, scale_factor):
