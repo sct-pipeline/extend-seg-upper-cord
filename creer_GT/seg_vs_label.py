@@ -29,21 +29,21 @@ UTILISATION :
 -------------
 Ce script peut être appelé en ligne de commande avec les arguments suivants :
 
-    python GT_vs_label.py \
-        -segmentation_regex "regex_des_segmentations" \
-        -labels_regex "regex_des_labels" \
-        -d_seg "chemin/vers/les/segmentations" \
-        -d_label "chemin/vers/les/labels" \
-        -seg_method "NomMethode"
+    python seg_vs_label.py \
+        -segmentation_regex regex_des_segmentations \
+        -labels_regex regex_des_labels \
+        -d_seg chemin/vers/les/segmentations \
+        -d_label chemin/vers/les/labels \
+        -seg_method NomMethode
 
 Exemple d'utilisation pour comparer la segmentation ground truth de contrast-agnostic avec les labels:
 
-    python GT_vs_label.py \
-        -segmentation_regex "desc-softseg_label-SC_seg" \
-        -labels_regex "label-discs_dlabel" \
-        -d_seg "data-multi-subject/derivatives/labels_softseg_bin" \
-        -d_label "data-multi-subject/derivatives/labels" \
-        -seg_method "GT_contrast-agnostic"
+    python seg_vs_label.py \
+        -segmentation_regex desc-softseg_label-SC_seg \
+        -labels_regex label-discs_dlabel \
+        -d_seg data-multi-subject/derivatives/labels_softseg_bin \
+        -d_label data-multi-subject/derivatives/labels \
+        -seg_method GT
 
 Les sections qui peuvent être modifiées par l'utilisateur sont précisées dans le script.
 
