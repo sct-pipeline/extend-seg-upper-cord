@@ -1,8 +1,48 @@
 #!/bin/bash
 
+###############################################################################
+# Script de calcul automatique du facteur d’échelle entre une segmentation 
+# PropSeg et le GT (Ground Truth) de contrast-agnostic.
+#
+# OBJECTIF :
+# ----------
+# Pour chaque fichier de segmentation PropSeg trouvé dans un dossier donné,
+# ce script :
+#   1. Recherche le fichier de segmentation de référence (GT de contrast-agnostic) correspondant.
+#   2. Recherche le fichier de labels vertébraux associé.
+#   3. Réoriente le fichier de labels au format RPI si nécessaire.
+#   4. Calcule la surface moyenne de la moelle épinière (CSA) entre C2 et C4
+#      à partir des segmentations PropSeg et GT en utilisant `sct_process_segmentation`.
+#   5. Calcule le facteur d’échelle = moyenne_CSA_GT / moyenne_CSA_PropSeg.
+#   6. Enregistre les résultats dans un fichier CSV avec :
+#         Sujet, CSA_PropSeg, CSA_GT, Facteur_Echelle
+#
+# ORGANISATION DES FICHIERS :
+# ---------------------------
+# - Les segmentations PropSeg sont attendues dans le dossier spécifié par `propseg_dir`.
+# - Les segmentations GT et les labels sont cherchés automatiquement dans `data-multi-subject/derivatives/`.
+# - Chaque sujet est identifié par un nom de fichier de type : sub-XXX_contraste.nii.gz
+#
+# UTILISATION :
+# -------------
+# Le script est autonome et peut être lancé tel quel :
+#
+#     bash extend-seg-upper-cord/creer_GT/calcul_facteur_echelle.sh
+#
+# Il génère un fichier CSV.
+# 
+# L'utilisateur peut modifier les chemins directement dans le script avant de le lancer.
+# Les endroits à modifier sont identifiés par des commentaires dans le script.
+#
+# AUTEUR :
+# --------
+# Mélisende St-Amour-Bilodeau
+# Avril 2025
+###############################################################################
+
 # Dossiers
-propseg_dir="correction/dossier_vide/anat" # Adapt depending on where the files are located
-output_csv="facteurs_echelle_1904.csv" # Adapt depending on how you want to name your file
+propseg_dir="correction/dossier_vide/anat" # À adapter dépendemment de l'emplacement des segmentations propseg
+output_csv="facteurs_echelle_1904.csv" # À adapter dépendemment du nom du fichier CSV de sortie voulu
 echo "Sujet,CSA_PropSeg,CSA_GT,Facteur_Echelle" > "$output_csv"
 
 # Pour chaque fichier PropSeg
@@ -36,10 +76,10 @@ for propseg_path in "$propseg_dir"/sub-*.nii.gz; do
     tmp_csa_propseg="tmp_propseg_${sujet}_${contraste}.csv"
     tmp_csa_gt="tmp_gt_${sujet}_${contraste}.csv"
 
-    # 1. CSA PropSeg
+    # CSA PropSeg
     sct_process_segmentation -i "$propseg_path" -perslice 1 -vert 2:4 -vertfile "$label_rpi" -o "$tmp_csa_propseg" -v 0
 
-    # 2. CSA GT
+    # CSA GT
     sct_process_segmentation -i "$gt_path" -perslice 1 -vert 2:4 -vertfile "$label_rpi" -o "$tmp_csa_gt" -v 0
 
     if [[ ! -s "$tmp_csa_propseg" || ! -s "$tmp_csa_gt" ]]; then
@@ -61,6 +101,10 @@ except Exception as e:
     print('NaN,NaN,NaN')
 ")
     echo "${sujet}_${contraste},$facteur_line" >> "$output_csv"
+
+    # Suppression des fichiers temporaires
+    rm -f "$label_rpi" "$tmp_csa_propseg" "$tmp_csa_gt"
+
 done
 
 echo "Terminé ! Résultats enregistrés dans $output_csv"
