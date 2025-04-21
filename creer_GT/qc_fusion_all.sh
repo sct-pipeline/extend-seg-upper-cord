@@ -46,7 +46,7 @@ qc_output="qc_report_2104" # Adapt to what you want your output to be
 mkdir -p "$qc_output"
 
 # Boucle sur toutes les segmentations fusionnées
-for fusion_seg in "$fusion_dir"/*propseg.nii.gz; do
+for fusion_seg in "$fusion_dir"/*.nii.gz; do
     subj_name=$(basename "$fusion_seg")  
     sujet=$(echo "$subj_name" | cut -d'_' -f1)         
     contraste=$(echo "$subj_name" | cut -d'_' -f2)       

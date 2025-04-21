@@ -95,7 +95,7 @@ for seg_path in sorted(glob(os.path.join(seg_extend_dir, "*.nii.gz"))):
     seg_extend_data = nib.load(seg_path).get_fdata()
 
     contrast_file = os.path.join(seg_contrast_agnostic_dir, f"{subject_and_contrast}_contrast.nii.gz")
-    gt_file = os.path.join(seg_gt_dir, f"/{subject}/anat/{subject_and_contrast}_desc-softseg_label-SC_seg.nii.gz")
+    gt_file = os.path.join(seg_gt_dir, f"{subject}/anat/{subject_and_contrast}_desc-softseg_label-SC_seg.nii.gz")
 
     if not os.path.exists(contrast_file):
         print(f"Fichier contrast manquant pour {subject_and_contrast}")

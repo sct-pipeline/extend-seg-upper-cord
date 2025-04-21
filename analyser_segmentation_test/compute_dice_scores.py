@@ -40,15 +40,17 @@ import subprocess
 import pandas as pd
 
 # === CONFIGURATION ===
-GT_DIR = "/home/ge.polymtl.ca/mestaa/propseg_fusion_cropped_2004" # À modifier selon l'emplacement des segmentations de référence
-PRED_DIR = "/home/ge.polymtl.ca/mestaa/output_extend-seg-upper-cord_2004" # À modifier selon l'emplacement des préditions du modèle
-OUTPUT_ALL_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_scores_2004.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant tous les Dice
-OUTPUT_STATS_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_stats_2004.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant les statistiques sur les Dice
+GT_DIR = "data-multi-subject/derivatives/labels_softseg_bin" # À modifier selon l'emplacement des segmentations de référence
+PRED_DIR = "/home/ge.polymtl.ca/mestaa/output_extend-seg-upper-cord_2104" # À modifier selon l'emplacement des préditions du modèle
+OUTPUT_ALL_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_scores_2104.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant tous les Dice
+OUTPUT_STATS_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_stats_2104.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant les statistiques sur les Dice
 
 # À modifier selon les fichiers pour lesquels on veut calculer le Dice score.
 SUBJECTS = [ 
-    "sub-barcelona02",
-    "sub-geneva01"
+    "sub-amu02",
+    "sub-barcelona04",
+    "sub-nottwil04",
+    "sub-oxfordFmrib10"
 ]
 
 CONTRASTS = ["T1w", "T2w"]
@@ -73,12 +75,12 @@ results = []
 
 for subj in SUBJECTS:
     for contrast in CONTRASTS:
-        gt_file = os.path.join(GT_DIR, f"{subj}_{contrast}_fusion_cropped.nii.gz")
+        gt_file = os.path.join(GT_DIR, f"{subj}/anat/{subj}_{contrast}_desc-softseg_label-SC_seg.nii.gz")
         pred_file = os.path.join(PRED_DIR, f"{subj}_{contrast}_seg_nnunet.nii.gz")
 
         if not os.path.isfile(gt_file):
-            print(f"GT introuvable : {gt_file}, recherche dans data-multi-subject")
-            gt_file = os.path.join(f"data-multi-subject/derivatives/labels_softseg_bin/{subj}/anat", f"{subj}_{contrast}_desc-softseg_label-SC_seg.nii.gz")
+            print(f"GT introuvable : {gt_file}")
+            continue
         if not os.path.isfile(pred_file):
             print(f"Prédiction introuvable : {pred_file}")
             continue
