@@ -1,0 +1,25 @@
+dataset_name: data-multi-subject
+test:
+- sub-amu02
+- sub-barcelona04
+- sub-nottwil04
+- sub-oxfordFmrib10
+train:
+- sub-barcelona01
+- sub-barcelona02
+- sub-cardiff04
+- sub-geneva03
+- sub-juntendo750w06
+- sub-mniS04
+- sub-oxfordFmrib02
+- sub-oxfordOhba05
+- sub-perform04
+- sub-queensland05
+- sub-queensland06
+- sub-stanford05
+- sub-stanford06
+val:
+- sub-brnoUhb05
+- sub-fslPrisma05
+- sub-milan06
+- sub-oxfordOhba01
