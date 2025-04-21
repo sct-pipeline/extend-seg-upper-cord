@@ -30,7 +30,7 @@ EXEMPLE :
 ---------
     python analyse_gt_propseg.py \
         -f GT_vs_label_1904.csv \
-        -o resultats_analyses/
+        -o resultats_analyses
 
 AUTEUR :
 --------
