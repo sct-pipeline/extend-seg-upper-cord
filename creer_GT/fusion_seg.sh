@@ -1,10 +1,52 @@
 #!/bin/bash
 
-# Dossiers
-propseg_dir="correction_2004/propseg_echelle" # Adapt to where your files are
-contrast_dir="data-multi-subject/derivatives/labels_softseg_bin"
-output_dir="correction_2004/propseg_fusion_2004" # Adapt to where you want your files to end up
+###############################################################################
+# Script de fusion des segmentations contrast-agnostic et PropSeg corrigées.
+#
+# OBJECTIF :
+# ----------
+# Ce script fusionne deux segmentations :
+#   - une segmentation corrigée par PropSeg (partie supérieure)
+#   - une segmentation contrast-agnostic (partie inférieure)
+#
+# La fusion s'effectue le long de l'axe Z selon une position de découpe fixée à 5 
+# slices avant la dernière slice non vide de la segmentation contrast-agnostic.
+#
+# STRUCTURE ATTENDUE :
+# --------------------
+# - Les segmentations PropSeg corrigées sont dans le fichier inscrit directement dans le script par l'utilisateur.
+#     (suffixe attendu : _seg_corrige.nii.gz)
+# - Les segmentations contrast-agnostic sont dans : data-multi-subject/derivatives/labels_softseg_bin/
+#     (format : sub-*/anat/sub-*_desc-softseg_label-SC_seg.nii.gz)
+# - Les fichiers de sortie fusionnés sont enregistrés selon un chemin spécifié directement dans le script
+#   par l'utilisateur.
+#
+# FONCTIONNEMENT :
+# ----------------
+# Pour chaque fichier de segmentation corrigée :
+#   1. Identifie le sujet et le contraste (ex: sub-vuiisIngenia03_T1w).
+#   2. Localise la segmentation contrast-agnostic correspondante.
+#   3. Détermine la dernière slice non vide dans la segmentation contrast-agnostic.
+#   4. Définit une position de fusion `zsplit = zmax - 5`.
+#   5. Utilise un script Python temporaire pour fusionner :
+#        - les slices [0:zsplit] de la segmentation contrast-agnostic
+#        - les slices [zsplit+1:end] de la segmentation PropSeg corrigée
+#   6. Sauvegarde l’image fusionnée avec le suffixe `_fusion.nii.gz`.
+#
+# UTILISATION :
+# -------------
+#     bash extend-seg-upper-cord/creer_GT/fusion_seg.sh
+#
+# AUTEUR :
+# --------
+# Mélisende St-Amour-Bilodeau
+# Avril 2025
+###############################################################################
 
+# Dossiers
+propseg_dir="test_2004/propseg_echelle_2004" # Adapter selon l'emplacement des fichiers de segmentation propseg corrigées
+contrast_dir="data-multi-subject/derivatives/labels_softseg_bin"
+output_dir="test_2004/output_fusion_2004" # Adapter selon l'emplacement voulu des segmentations fusionnées
 mkdir -p "$output_dir"
 
 # Script python temporaire
