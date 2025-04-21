@@ -1,3 +1,43 @@
+"""
+Script pour analyser le fichier CSV créé par seg_vs_label.py.
+
+OBJECTIF :
+----------
+Ce script prend en entrée un fichier CSV contenant des mesures d’écart en coordonnées Z 
+entre des segmentations et un label de référence (C1). Ce fichier CSV contient l'écart entre le label
+et la segmentation pour deux méthodes: propseg et le ground truth de la méthode contrast-agnostic (GT).
+
+Il permet de :
+1. Identifier les sujets ayant uniquement une des deux colonnes renseignées (PropSeg ou GT).
+2. Identifier les sujets dont la valeur GT est inférieure à un seuil (par défaut < 5).
+3. Calculer des statistiques de base (moyenne, médiane, min, max) pour les deux méthodes.
+4. Générer deux fichiers CSV :
+   - `recapitulatif.csv` : tableau récapitulatif des statistiques.
+   - `gt_negatif.csv` : sujets avec une valeur de GT inférieure à 5.
+
+UTILISATION :
+-------------
+Ce script peut être exécuté depuis la ligne de commande avec les arguments suivants :
+
+    python analyse_gt_propseg.py -f chemin/vers/fichier.csv -o chemin/vers/dossier_output
+
+ARGUMENTS :
+-----------
+- `-f` : chemin du fichier CSV contenant les colonnes "Sujet", "GT", "propseg".
+- `-o` : chemin du dossier de sortie où seront écrits les fichiers de résultats.
+
+EXEMPLE :
+---------
+    python analyse_gt_propseg.py \
+        -f GT_vs_label_1904.csv \
+        -o resultats_analyses/
+
+AUTEUR :
+--------
+Mélisende St-Amour-Bilodeau
+Date : Avril 2025
+"""
+
 import pandas as pd
 import argparse
 
