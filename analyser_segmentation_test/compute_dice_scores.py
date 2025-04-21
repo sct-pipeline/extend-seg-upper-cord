@@ -1,13 +1,52 @@
+"""
+Script de calcul automatique du Dice score entre des segmentations prédictives (nnUNet)
+et des segmentations de référence.
+
+OBJECTIF :
+----------
+Ce script évalue la performance d’un modèle de segmentation en comparant
+chaque segmentation prédite avec une segmentation de référence, en utilisant le Dice score
+fourni par Spinal Cord Toolbox ('sct_dice_coefficient').
+
+FONCTIONNEMENT :
+----------------
+1. Pour chaque sujet et contraste (T1w, T2w) :
+   - Charge la segmentation prédite (`*_seg_nnunet.nii.gz`)
+   - Charge la segmentation de référence fusionnée ('*_fusion_cropped.nii.gz') ou
+     un fichier GT alternatif dans `labels_softseg_bin` si le premier est absent.
+   - Calcule le Dice score avec 'sct_dice_coefficient'.
+2. Construit un tableau récapitulatif des scores pour tous les sujets.
+3. Sauvegarde deux fichiers CSV :
+   - 'dice_scores.csv' : scores individuels par sujet/contraste
+   - 'dice_stats.csv'  : statistiques globales (moyenne, écart-type, CV)
+
+
+UTILISATION :
+-------------
+L'utilisateur doit modifier les paramètres GT_DIR, PRED_DIR, OUTPUT_ALL_DICE_CSV et 
+OUTPUT_STATS_DICE_CSV directement dans le script. L'utilisateur doit aussi spécifier
+les sujets à analyser. Il doit ensuite lancer :
+
+    bash extend-seg-upper-cord/analyser_segmentation_test/compute_dice_scores.py
+
+AUTEUR :
+--------
+Mélisende St-Amour-Bilodeau  
+Date : Avril 2025
+"""
+
 import os
 import subprocess
 import pandas as pd
 
 # === CONFIGURATION ===
-GT_DIR = "/home/ge.polymtl.ca/mestaa/propseg_fusion_cropped_2004"
-PRED_DIR = "/home/ge.polymtl.ca/mestaa/output_extend-seg-upper-cord_2004"
-OUTPUT_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_scores_2004.csv"
+GT_DIR = "/home/ge.polymtl.ca/mestaa/propseg_fusion_cropped_2004" # À modifier selon l'emplacement des segmentations de référence
+PRED_DIR = "/home/ge.polymtl.ca/mestaa/output_extend-seg-upper-cord_2004" # À modifier selon l'emplacement des préditions du modèle
+OUTPUT_ALL_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_scores_2004.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant tous les Dice
+OUTPUT_STATS_DICE_CSV = "/home/ge.polymtl.ca/mestaa/results/dice_stats_2004.csv" # À modifier selon l'emplacement voulu du fichier CSV contenant les statistiques sur les Dice
 
-SUBJECTS = [
+# À modifier selon les fichiers pour lesquels on veut calculer le Dice score.
+SUBJECTS = [ 
     "sub-barcelona02",
     "sub-geneva01"
 ]
@@ -55,8 +94,8 @@ for subj in SUBJECTS:
 
 # === Sauvegarde CSV ===
 df = pd.DataFrame(results)
-df.to_csv(OUTPUT_CSV, index=False)
-print(f"Résultats sauvegardés dans : {OUTPUT_CSV}")
+df.to_csv(OUTPUT_ALL_DICE_CSV, index=False)
+print(f"Résultats sauvegardés dans : {OUTPUT_ALL_DICE_CSV}")
 
 # === Moyenne, écart-type, coefficient de variation ===
 mean_dice = df["dice_score"].mean()
@@ -77,6 +116,6 @@ stats_output = {
 }
 
 df_stats = pd.DataFrame(stats_output)
-df_stats.to_csv("/home/ge.polymtl.ca/mestaa/results/dice_stats_2004.csv", index=False)
+df_stats.to_csv(OUTPUT_STATS_DICE_CSV, index=False)
 
-print("Statistiques sauvegardées dans : /home/ge.polymtl.ca/mestaa/results/dice_stats_2004.csv")
+print(f"Statistiques sauvegardées dans : {OUTPUT_STATS_DICE_CSV}")
