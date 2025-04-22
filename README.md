@@ -7,6 +7,8 @@
 
 ## Schéma explicatif
 
+Le schéma suivant résume les différentes étapes pour l'obtention des vérités-terrain pour entraîner le modèle de segmentation de la moelle épinière contrast-agnostic qui permet une couverture adéquate de la région de la vertèbre C1.
+
 ![Schema_explicatif](https://github.com/user-attachments/assets/7fc8818a-5f77-4f14-bdca-2345cf851f21)
 
 ## Utilisation du pipeline
