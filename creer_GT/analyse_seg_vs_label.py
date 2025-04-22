@@ -28,7 +28,7 @@ ARGUMENTS :
 
 EXEMPLE :
 ---------
-    python analyse_gt_propseg.py \
+    python analyse_seg_vs_label.py \
         -f GT_vs_label_1904.csv \
         -o resultats_analyses
 
