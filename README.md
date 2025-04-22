@@ -1,8 +1,13 @@
 # Contrast-agnostic: Extend segmentation to the upper cord 
 
 ## Table des matières
+* [Schéma explicatif](#schéma-explicatif)
 * [Utilisation du pipeline](#utilisation-du-pipeline)
 * [Entraîner le modèle](#entrainer-le-modèle)
+
+## Schéma explicatif
+
+![Schema_explicatif](https://github.com/user-attachments/assets/7fc8818a-5f77-4f14-bdca-2345cf851f21)
 
 ## Utilisation du pipeline
 
